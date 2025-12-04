@@ -23,6 +23,8 @@ HOST_FWDS = [
     ('tcp', 830, 830),    # NETCONF
     ('tcp', 80, 80),      # HTTP
     ('tcp', 443, 443),    # HTTPS
+    ('tcp', 8291, 8291),  # Winbox
+    ('tcp', 8728, 8728),  # API
 ]
 
 def gen_mac(last_octet=None):

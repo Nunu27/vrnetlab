@@ -1,10 +1,10 @@
-FROM debian:bullseye
+FROM debian:bullseye-slim
 LABEL maintainer="Kristian Larsson <kristian@spritelink.net>"
 
 ARG IMAGE
 
 RUN apt-get update -qy \
- && apt-get install -y \
+ && apt-get install -y --no-install-recommends \
     iproute2 \
     python3-ipy \
     socat \
