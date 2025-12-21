@@ -53,8 +53,8 @@ jobs:
 
       - name: Prepare build context
         run: |
-          cp -r common routeros/
-          cd routeros
+          cp -r common mikrotik/routeros/
+          cd mikrotik/routeros
           wget https://download.mikrotik.com/routeros/7.20.5/chr-7.20.5.vmdk.zip
           unzip chr-7.20.5.vmdk.zip
           rm chr-7.20.5.vmdk.zip
