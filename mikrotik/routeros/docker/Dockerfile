@@ -1,30 +1,24 @@
-FROM public.ecr.aws/docker/library/debian:bookworm-slim
+FROM public.ecr.aws/docker/library/debian:bullseye-slim
 LABEL org.opencontainers.image.authors="roman@dodin.dev"
 
 ARG DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get update -qy \
-   && apt-get upgrade -qy \
-   && apt-get install -y \
+   && apt-get install -y --no-install-recommends \
    bridge-utils \
    iproute2 \
-   python3-ipy \
+   python3 \
    socat \
-   qemu-kvm \
    qemu-system-x86 \
-   tcpdump \
-   ssh \
-   inetutils-ping \
-   dnsutils \
+   qemu-utils \
    iptables \
-   nftables \
-   telnet \
-   ftp \
    && rm -rf /var/lib/apt/lists/*
 
 ARG IMAGE
 COPY $IMAGE* /
 COPY *.py /
+
+ENV PYTHONUNBUFFERED=1
 
 EXPOSE 22 161/udp 830 5000 5678 8291 8728 10000-10099
 HEALTHCHECK CMD ["/healthcheck.py"]
