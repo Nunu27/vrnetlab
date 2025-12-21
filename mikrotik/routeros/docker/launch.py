@@ -83,6 +83,7 @@ class ROS_vm(vrnetlab.VM):
         """
         Generate RouterOS MGMT interface connected to a mgmt bridge
         """
+        self.mgmt_tcp_ports = [8728] # ROuter OS API port
 
         res = []
 
