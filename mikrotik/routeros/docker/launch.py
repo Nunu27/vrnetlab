@@ -101,6 +101,7 @@ class ROS_vm(vrnetlab.VM):
         """
         Generate RouterOS MGMT interface connected to a mgmt bridge
         """
+        self.mgmt_tcp_ports = [8728] # ROuter OS API port
 
         res = []
 
@@ -269,7 +270,8 @@ if __name__ == "__main__":
     if args.trace:
         logger.setLevel(1)
 
-    # make ftpboot writable for saving ROS config
+    # Ensure ftpboot exists and is writable for saving ROS config.
+    vrnetlab.run_command(["mkdir", "-p", "/ftpboot"])
     vrnetlab.run_command(["chmod", "-R", "777", "/ftpboot"])
 
     # kill origin socats since we use bridge interface
