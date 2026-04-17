@@ -26,12 +26,12 @@ jobs:
       matrix:
         include:
           - platform: linux/amd64
-            image_url: https://download.mikrotik.com/routeros/7.20.8/chr-7.20.8.vmdk.zip
-            image_file: chr-7.20.8.vmdk
+            image_url: https://download.mikrotik.com/routeros/7.22.1/chr-7.22.1.vmdk.zip
+            image_file: chr-7.22.1.vmdk
             tag_suffix: amd64
           - platform: linux/arm64
-            image_url: https://download.mikrotik.com/routeros/7.20.8/chr-7.20.8-arm64.vdi.zip
-            image_file: chr-7.20.8-arm64.vdi
+            image_url: https://download.mikrotik.com/routeros/7.22.1/chr-7.22.1-arm64.vdi.zip
+            image_file: chr-7.22.1-arm64.vdi
             tag_suffix: arm64
 
     steps:

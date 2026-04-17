@@ -4,7 +4,6 @@ LABEL org.opencontainers.image.authors="roman@dodin.dev"
 RUN apt-get update -qy \
    && apt-get install -y --no-install-recommends \
    qemu-system-x86 \
-   qemu-utils \
    qemu-efi-aarch64 \
    ftp \
    && rm -rf /var/lib/apt/lists/*
