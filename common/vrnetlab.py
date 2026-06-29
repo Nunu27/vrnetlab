@@ -373,12 +373,9 @@ class VM:
 
         if self.arch == "x86_64":
             machine = "pc"
-        elif os.path.exists("/dev/kvm"):
-            # KVM available: use hardware acceleration, no -accel tcg
-            machine = "virt,virtualization=on"
         else:
-            # No KVM: fall back to TCG software emulation
-            machine = "virt,virtualization=on -accel tcg,tb-size=128"
+            # Try KVM first; fall back to TCG if KVM is unavailable (e.g. inside Docker without nested virt)
+            machine = "virt,virtualization=on,accel=kvm:tcg"
 
         # Build qemu args
         self.qemu_args = [
@@ -410,8 +407,9 @@ class VM:
         if self.qemu_additional_args:
             self.qemu_args.extend(self.qemu_additional_args)
 
-        # enable hardware assist if KVM is available
-        if os.path.exists("/dev/kvm"):
+        # For x86_64, add -enable-kvm if KVM is available.
+        # For other arches, accel=kvm:tcg in the machine spec handles fallback automatically.
+        if self.arch == "x86_64" and os.path.exists("/dev/kvm"):
             self.qemu_args.insert(1, "-enable-kvm")
 
     def start(self):
