@@ -371,7 +371,14 @@ class VM:
                 ]
             )
 
-        machine = "pc" if self.arch == "x86_64" else "virt,virtualization=on -accel tcg,tb-size=128"
+        if self.arch == "x86_64":
+            machine = "pc"
+        elif os.path.exists("/dev/kvm"):
+            # KVM available: use hardware acceleration, no -accel tcg
+            machine = "virt,virtualization=on"
+        else:
+            # No KVM: fall back to TCG software emulation
+            machine = "virt,virtualization=on -accel tcg,tb-size=128"
 
         # Build qemu args
         self.qemu_args = [
