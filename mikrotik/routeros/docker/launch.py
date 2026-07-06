@@ -146,14 +146,17 @@ class ROS_vm(vrnetlab.VM):
                         "n", wait="Do you want to see the software license? [Y/n]: "
                     )
 
-                # ROSv7 requires changing the password right away. ROSv6 does not require changing the password
-
-                (ridx2, match2, _) = self.tn.expect([b"new password>"], 10)
+                # ROSv7 requires changing the password right away. ROSv6 does not require changing the password.
+                # This detection window needs to be generous: under concurrent multi-VM boot load on the host,
+                # the "new password>" prompt can take well over 10s to appear. If this expect() times out we
+                # wrongly assume ROSv6 and write the bootstrap config into what is still the password prompt,
+                # which RouterOS then rejects and the console hangs forever waiting for a CLI prompt that never comes.
+                (ridx2, match2, _) = self.tn.expect([b"new password>"], 60)
                 if match2 and ridx2 == 0:  # got a match! login
                     self.logger.debug("ROSv7 detected, setting admin password")
                     self.wait_write(f"{self.password}", wait="new password>")
                     self.wait_write(f"{self.password}", wait="repeat new password>")
-                    changed = self.tn.read_until(b"Password changed", 10)
+                    changed = self.tn.read_until(b"Password changed", 60)
                     self.logger.debug(f"Got '{changed}' for password change response")
 
                 self.logger.debug("Login completed")
