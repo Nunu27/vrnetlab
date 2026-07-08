@@ -4,7 +4,6 @@ import datetime
 import ftplib
 import logging
 import os
-import platform
 import re
 import signal
 import sys
@@ -67,8 +66,10 @@ class ROS_vm(vrnetlab.VM):
             ram_size = 256
             cpu_type = "qemu64"
 
-        # the default cpu=host only works when running clab on an amd64 machine
-        extra_args = {} if platform.machine() == "x86_64" else {"cpu": cpu_type}
+        # cpu=host passes hardware CPU features straight through to the guest. Under nested
+        # virtualization (e.g. Hyper-V -> KVM) that passthrough can send KVM's interrupt-controller
+        # emulation into a busy-loop that never lets the guest boot, so always pin a named model instead.
+        extra_args = {"cpu": cpu_type}
 
         super(ROS_vm, self).__init__(username, password, disk_image=disk_image, ram=ram_size, driveif="virtio", arch=arch, **extra_args)
         if self.arch != "aarch64":
