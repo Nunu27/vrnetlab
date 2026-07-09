@@ -150,6 +150,13 @@ jobs:
       - name: Install containerlab
         run: bash -c "$(curl -sL https://get.containerlab.dev)"
 
+      - name: Enable KVM device access (best-effort)
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm || true
+          ls -la /dev/kvm || echo "::warning::/dev/kvm not present on this runner; mikrotik_ros needs it and will fail to deploy"
+
       - name: Write test topology
         run: |
           cat > topo.clab.yml <<EOF
@@ -181,12 +188,13 @@ jobs:
 
       # Regression test for the bug where a node's identity, once set away from the
       # default on first boot, makes vrnetlab's login-prompt matcher fail on every
-      # subsequent boot and the node gets stuck unhealthy forever. `docker restart`
-      # keeps the same container (and its already-provisioned disk), so this
-      # reproduces the exact scenario that caused the outage in production.
+      # subsequent boot and the node gets stuck unhealthy forever. Use the same
+      # `containerlab restart --node` command vlab's own auto-heal uses in production
+      # (packages/@vlab/clab/src/containerlab.ts, redeployNode) rather than a bare
+      # `docker restart`, since that's the actual code path this is meant to guard.
       - name: Restart node and confirm it recovers
         run: |
-          sudo docker restart clab-citest-r1
+          sudo containerlab restart --topo topo.clab.yml --node r1
           deadline=$((SECONDS + 600))
           status=""
           while [ "$SECONDS" -lt "$deadline" ]; do
