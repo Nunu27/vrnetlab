@@ -125,9 +125,17 @@ class ROS_vm(vrnetlab.VM):
             self.start()
             return
 
-        (ridx, match, res) = self.tn.expect([b"MikroTik Login", b"RouterOS Login"], 1)
+        # Once a node's identity has been set away from the default (which happens on
+        # every deploy, right after first boot), a later reboot shows "<hostname> Login:"
+        # instead of "MikroTik Login:" / "RouterOS Login:". Without matching that too,
+        # bootstrap_spin() never recognizes the prompt again and the node is stuck
+        # unhealthy forever after any restart.
+        hostname_login = f"{self.hostname} Login".encode()
+        (ridx, match, res) = self.tn.expect(
+            [b"MikroTik Login", b"RouterOS Login", hostname_login], 1
+        )
         if match:  # got a match!
-            if ridx in (0, 1):  # login
+            if ridx in (0, 1, 2):  # login
                 self.logger.debug("VM started")
 
                 # Login
@@ -139,6 +147,8 @@ class ROS_vm(vrnetlab.VM):
                     self.wait_write("admin+ct", wait="MikroTik Login: ")
                 elif ridx == 1:
                     self.wait_write("admin+ct", wait="RouterOS Login: ")
+                elif ridx == 2:
+                    self.wait_write("admin+ct", wait=f"{self.hostname} Login: ")
                 self.wait_write("", wait="Password: ")
 
                 # not happening on arm64
