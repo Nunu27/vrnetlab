@@ -145,30 +145,45 @@ class ROS_vm(vrnetlab.VM):
                 # Mikrotik decided to change the prompt in the 6.48 line of code it seems
                 if ridx == 0:
                     self.wait_write("admin+ct", wait="MikroTik Login: ")
+                    self.wait_write("", wait="Password: ")
                 elif ridx == 1:
                     self.wait_write("admin+ct", wait="RouterOS Login: ")
+                    self.wait_write("", wait="Password: ")
                 elif ridx == 2:
-                    self.wait_write("admin+ct", wait=f"{self.hostname} Login: ")
-                self.wait_write("", wait="Password: ")
-
-                # not happening on arm64
-                if self.arch != "aarch64":
+                    # Unlike ridx 0/1 (a factory-default device with a blank
+                    # password), reaching the hostname-specific prompt means
+                    # bootstrap_config() already ran on a previous boot and set
+                    # real credentials - login with those, not a blank password.
                     self.wait_write(
-                        "n", wait="Do you want to see the software license? [Y/n]: "
+                        f"{self.username}+ct", wait=f"{self.hostname} Login: "
                     )
+                    self.wait_write(self.password, wait="Password: ")
 
-                # ROSv7 requires changing the password right away. ROSv6 does not require changing the password.
-                # This detection window needs to be generous: under concurrent multi-VM boot load on the host,
-                # the "new password>" prompt can take well over 10s to appear. If this expect() times out we
-                # wrongly assume ROSv6 and write the bootstrap config into what is still the password prompt,
-                # which RouterOS then rejects and the console hangs forever waiting for a CLI prompt that never comes.
-                (ridx2, match2, _) = self.tn.expect([b"new password>"], 60)
-                if match2 and ridx2 == 0:  # got a match! login
-                    self.logger.debug("ROSv7 detected, setting admin password")
-                    self.wait_write(f"{self.password}", wait="new password>")
-                    self.wait_write(f"{self.password}", wait="repeat new password>")
-                    changed = self.tn.read_until(b"Password changed", 60)
-                    self.logger.debug(f"Got '{changed}' for password change response")
+                # The software-license question and the forced first-login
+                # password change are both one-time RouterOS prompts shown only
+                # on a device's very first-ever login (ridx 0/1). A node reaching
+                # the hostname-specific reboot prompt (ridx 2) has already been
+                # through that flow on a previous boot and RouterOS will not show
+                # either prompt again - waiting on them here would block forever.
+                if ridx in (0, 1):
+                    # not happening on arm64
+                    if self.arch != "aarch64":
+                        self.wait_write(
+                            "n", wait="Do you want to see the software license? [Y/n]: "
+                        )
+
+                    # ROSv7 requires changing the password right away. ROSv6 does not require changing the password.
+                    # This detection window needs to be generous: under concurrent multi-VM boot load on the host,
+                    # the "new password>" prompt can take well over 10s to appear. If this expect() times out we
+                    # wrongly assume ROSv6 and write the bootstrap config into what is still the password prompt,
+                    # which RouterOS then rejects and the console hangs forever waiting for a CLI prompt that never comes.
+                    (ridx2, match2, _) = self.tn.expect([b"new password>"], 60)
+                    if match2 and ridx2 == 0:  # got a match! login
+                        self.logger.debug("ROSv7 detected, setting admin password")
+                        self.wait_write(f"{self.password}", wait="new password>")
+                        self.wait_write(f"{self.password}", wait="repeat new password>")
+                        changed = self.tn.read_until(b"Password changed", 60)
+                        self.logger.debug(f"Got '{changed}' for password change response")
 
                 self.logger.debug("Login completed")
 
