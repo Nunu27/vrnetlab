@@ -37,5 +37,12 @@ RUN /bin/uv sync --frozen
 # copy core vrnetlab scripts
 COPY ./common/healthcheck.py ./common/vrnetlab.py /
 
-HEALTHCHECK CMD ["uv", "run", "/healthcheck.py"]
+# Default HEALTHCHECK options give a 0s start-period, so with the default 30s
+# interval / 3 retries, any node whose boot legitimately takes longer than ~90s
+# gets marked unhealthy while it's still booting. That's shorter than a typical
+# VM-based kind's boot time under qemu, so orchestrators that auto-heal on
+# "unhealthy" (e.g. vlab) end up restarting the node before it ever finishes
+# booting, looping forever regardless of whether the boot itself would have
+# succeeded.
+HEALTHCHECK --start-period=300s --interval=15s --retries=3 CMD ["uv", "run", "/healthcheck.py"]
 ENTRYPOINT ["uv", "run", "/launch.py"]
